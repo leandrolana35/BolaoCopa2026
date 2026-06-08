@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bolão Copa 2026 🏆</title>
+
+<!-- Firebase SDKs (compat mode) -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+<style>
+:root{
+  --bg:#091420;--card:#0f2035;--card2:#162d47;--card3:#1d3a58;
+  --gold:#f0c040;--green:#22c55e;--blue:#3b82f6;--red:#ef4444;--orange:#f97316;
+  --text:#e2eaf4;--muted:#6b8aaa;--border:#1e3a5a;--radius:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+a{color:var(--gold);text-decoration:none}
+
+/* ─── SETUP ─── */
+#setup-screen{display:none;justify-content:center;align-items:flex-start;min-height:100vh;padding:40px 20px;background:radial-gradient(ellipse at top,#0f2a3f 0%,var(--bg) 70%)}
+#setup-screen.show{display:flex}
+.setup-card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:36px;width:100%;max-width:680px}
+.setup-step{background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:12px}
+.step-num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:var(--gold);color:#000;font-weight:800;font-size:13px;margin-right:10px;flex-shrink:0}
+.code-block{background:var(--card3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;font-family:monospace;font-size:13px;margin:10px 0;white-space:pre-wrap;word-break:break-all;color:#7dd3fc}
+
+/* ─── AUTH ─── */
+#auth-screen{display:none;justify-content:center;align-items:center;min-height:100vh;padding:20px;background:radial-gradient(ellipse at top,#0f2a3f 0%,var(--bg) 70%)}
+#auth-screen.show{display:flex}
+.auth-card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:40px 36px;width:100%;max-width:430px}
+.auth-logo{text-align:center;font-size:52px;margin-bottom:6px}
+.auth-title{text-align:center;font-size:24px;font-weight:800;color:var(--gold);letter-spacing:-.5px}
+.auth-sub{text-align:center;color:var(--muted);font-size:13px;margin-bottom:28px;margin-top:4px}
+.auth-tabs{display:flex;background:var(--card2);border-radius:var(--radius);padding:4px;gap:4px;margin-bottom:24px}
+.auth-tab{flex:1;text-align:center;padding:9px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:500;border:none;background:transparent;color:var(--muted);transition:.2s}
+.auth-tab.active{background:var(--gold);color:#000;font-weight:700}
+.auth-form{display:none}
+.auth-form.active{display:block}
+
+/* ─── FORMS ─── */
+.field{margin-bottom:16px}
+.field label{display:block;font-size:11px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.6px;font-weight:600}
+.field input,.field select{width:100%;background:var(--card2);border:1.5px solid var(--border);color:var(--text);border-radius:var(--radius);padding:11px 14px;font-size:15px;outline:none;transition:.2s;font-family:inherit}
+.field input:focus,.field select:focus{border-color:var(--gold)}
+.field select option{background:var(--card2)}
+.field-row{display:flex;gap:10px}
+.field-row .field{flex:1}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 20px;border-radius:var(--radius);font-size:14px;font-weight:600;cursor:pointer;border:none;transition:.15s;font-family:inherit;white-space:nowrap}
+.btn:hover{filter:brightness(1.1)}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--gold);color:#000}
+.btn-green{background:var(--green);color:#000}
+.btn-blue{background:var(--blue);color:#fff}
+.btn-ghost{background:transparent;border:1.5px solid var(--border);color:var(--text)}
+.btn-danger{background:var(--red);color:#fff}
+.btn-orange{background:var(--orange);color:#fff}
+.btn-sm{padding:6px 13px;font-size:12px}
+.btn-block{width:100%}
+
+/* ─── APP SHELL ─── */
+#app{display:none;flex-direction:column;min-height:100vh}
+#app.show{display:flex}
+.header{background:var(--card);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:58px;position:sticky;top:0;z-index:20}
+.header-brand{font-size:17px;font-weight:800;color:var(--gold)}
+.header-user{display:flex;align-items:center;gap:12px}
+.header-user span{font-size:13px;color:var(--muted)}
+.nav{background:var(--card);border-bottom:1px solid var(--border);display:flex;overflow-x:auto;padding:0 16px;gap:2px}
+.nav::-webkit-scrollbar{height:3px}
+.nav-btn{padding:14px 18px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:transparent;color:var(--muted);border-bottom:3px solid transparent;white-space:nowrap;transition:.2s;font-family:inherit}
+.nav-btn:hover{color:var(--text)}
+.nav-btn.active{color:var(--gold);border-bottom-color:var(--gold);font-weight:700}
+.main{flex:1;padding:28px 24px}
+.container{max-width:1100px;margin:0 auto}
+.page-title{font-size:20px;font-weight:800;margin-bottom:20px;display:flex;align-items:center;gap:10px}
+.tab-section{display:none}
+.tab-section.active{display:block}
+
+/* ─── LOADING ─── */
+#loading-overlay{display:none;position:fixed;inset:0;background:var(--bg);z-index:100;justify-content:center;align-items:center;flex-direction:column;gap:16px}
+#loading-overlay.show{display:flex}
+.spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ─── CARDS ─── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:14px}
+.card-title{font-size:14px;font-weight:700;margin-bottom:14px;color:var(--gold);display:flex;align-items:center;gap:7px}
+.card-sm{padding:14px 16px}
+
+/* ─── GAME CARDS ─── */
+.game-card{background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:16px;cursor:pointer;transition:.2s;margin-bottom:10px}
+.game-card:hover{border-color:var(--gold);background:var(--card2)}
+.game-card.selected{border-color:var(--gold);background:var(--card2)}
+.game-card.has-bet{border-color:var(--green)}
+.game-meta{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.badge{padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.3px}
+.badge-group{background:rgba(240,192,64,.15);color:var(--gold)}
+.badge-round{background:rgba(59,130,246,.15);color:var(--blue)}
+.badge-done{background:rgba(34,197,94,.15);color:var(--green)}
+.game-date{font-size:11px;color:var(--muted);margin-left:auto}
+.teams-row{display:flex;align-items:center;gap:12px}
+.team-block{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px}
+.team-flag{font-size:30px;line-height:1}
+.team-name{font-size:13px;font-weight:600;text-align:center}
+.vs-block{display:flex;flex-direction:column;align-items:center;gap:2px;flex-shrink:0}
+.vs{font-size:12px;color:var(--muted);font-weight:700}
+.score-bet{color:var(--gold);font-weight:800;font-size:18px}
+
+/* ─── BET PANEL ─── */
+.bet-panel{background:var(--card2);border-radius:12px;padding:20px;margin-top:10px}
+.bet-panel-title{font-size:14px;font-weight:700;margin-bottom:16px;color:var(--gold)}
+.score-inputs{display:flex;align-items:center;justify-content:center;gap:16px;margin:16px 0}
+.score-input-wrap{display:flex;flex-direction:column;align-items:center;gap:8px}
+.score-input-wrap label{font-size:12px;color:var(--muted);font-weight:600}
+.score-input-wrap input{width:80px;height:80px;text-align:center;font-size:32px;font-weight:800;background:var(--card3);border:2px solid var(--border);color:var(--text);border-radius:12px;outline:none;font-family:inherit;transition:.2s}
+.score-input-wrap input:focus{border-color:var(--gold)}
+.score-dash{font-size:28px;color:var(--muted);font-weight:700;margin-top:24px}
+
+/* ─── TABLES ─── */
+.bets-table-wrap{overflow-x:auto}
+.bets-table{width:100%;border-collapse:collapse;font-size:13px}
+.bets-table th{padding:9px 12px;text-align:left;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--border);background:var(--card)}
+.bets-table td{padding:10px 12px;border-bottom:1px solid var(--border)}
+.bets-table tr:last-child td{border-bottom:none}
+.bets-table tr:hover td{background:var(--card2)}
+.pts{display:inline-flex;align-items:center;justify-content:center;width:32px;height:24px;border-radius:20px;font-size:11px;font-weight:800}
+.pts-5{background:rgba(34,197,94,.2);color:var(--green)}
+.pts-3{background:rgba(59,130,246,.2);color:var(--blue)}
+.pts-1{background:rgba(240,192,64,.2);color:var(--gold)}
+.pts-0{background:rgba(239,68,68,.15);color:var(--red)}
+.pts-null{background:rgba(107,138,170,.1);color:var(--muted)}
+
+/* ─── LEADERBOARD ─── */
+.lb-table{width:100%;border-collapse:collapse}
+.lb-table th{padding:10px 14px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);border-bottom:1px solid var(--border)}
+.lb-table td{padding:12px 14px;border-bottom:1px solid var(--border);font-size:14px}
+.lb-table tr:last-child td{border-bottom:none}
+.lb-table tr:hover td{background:var(--card2)}
+.rank-badge{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-size:13px;font-weight:800}
+.rank-1{background:rgba(240,192,64,.25);color:var(--gold)}
+.rank-2{background:rgba(192,192,192,.2);color:#c0c0c0}
+.rank-3{background:rgba(205,127,50,.2);color:#cd7f32}
+.rank-n{background:var(--card2);color:var(--muted);font-size:12px}
+.total-pts{font-size:18px;font-weight:800;color:var(--gold)}
+
+/* ─── EVENTS ─── */
+.round-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px}
+.round-tab{padding:7px 14px;border-radius:20px;font-size:13px;cursor:pointer;background:var(--card);border:1.5px solid var(--border);color:var(--muted);transition:.2s}
+.round-tab.active{background:var(--gold);color:#000;border-color:var(--gold);font-weight:700}
+.events-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.events-grid .event-full{grid-column:span 2}
+@media(max-width:540px){.events-grid{grid-template-columns:1fr}.events-grid .event-full{grid-column:span 1}}
+
+/* ─── MISC ─── */
+.divider{height:1px;background:var(--border);margin:16px 0}
+.empty{text-align:center;color:var(--muted);padding:40px 20px;font-size:14px}
+.flex{display:flex;align-items:center;gap:10px}
+.flex-between{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.mt8{margin-top:8px}.mt16{margin-top:16px}.mb8{margin-bottom:8px}.mb16{margin-bottom:16px}
+.text-green{color:var(--green)}.text-gold{color:var(--gold)}.text-muted{color:var(--muted)}.text-red{color:var(--red)}
+.fw700{font-weight:700}.fs12{font-size:12px}.fs13{font-size:13px}
+.filter-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.filter-chip{padding:6px 14px;border-radius:20px;font-size:12px;cursor:pointer;background:var(--card);border:1.5px solid var(--border);color:var(--muted);transition:.2s;font-family:inherit;font-weight:500}
+.filter-chip.active{background:var(--gold);color:#000;border-color:var(--gold);font-weight:700}
+.admin-section{margin-bottom:28px}
+.admin-section-title{font-size:15px;font-weight:700;margin-bottom:12px;color:var(--gold);padding-bottom:8px;border-bottom:1px solid var(--border)}
+
+/* ─── TOAST ─── */
+#toast-container{position:fixed;bottom:24px;right:24px;z-index:999;display:flex;flex-direction:column;gap:8px}
+.toast{padding:12px 20px;border-radius:var(--radius);font-size:13px;font-weight:600;animation:slideUp .3s ease;max-width:320px;box-shadow:0 4px 20px rgba(0,0,0,.4)}
+.toast-ok{background:var(--green);color:#000}
+.toast-err{background:var(--red);color:#fff}
+.toast-info{background:var(--blue);color:#fff}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+
+/* ─── MODAL ─── */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:50;justify-content:center;align-items:center;padding:20px}
+.modal-bg.show{display:flex}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto}
+.modal-title{font-size:17px;font-weight:800;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between}
+.modal-close{cursor:pointer;color:var(--muted);font-size:20px;border:none;background:transparent;padding:4px}
+.modal-close:hover{color:var(--text)}
+
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--card)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════
+     LOADING OVERLAY
+═══════════════════════════════════════ -->
+<div id="loading-overlay" class="show">
+  <div class="spinner"></div>
+  <div style="color:var(--muted);font-size:14px">Carregando...</div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     SETUP SCREEN (exibida se Firebase não estiver configurado)
+═══════════════════════════════════════ -->
+<div id="setup-screen">
+  <div class="setup-card">
+    <div style="text-align:center;font-size:48px;margin-bottom:8px">🏆</div>
+    <h1 style="text-align:center;color:var(--gold);margin-bottom:6px">Bolão Copa 2026</h1>
+    <p style="text-align:center;color:var(--muted);font-size:14px;margin-bottom:28px">Configure o Firebase para ativar o modo online</p>
+
+    <div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:10px;padding:14px 18px;margin-bottom:24px;font-size:13px;color:#fca5a5">
+      ⚠️ O Firebase ainda não está configurado. Siga os passos abaixo e cole sua configuração no arquivo HTML.
+    </div>
+
+    <div class="setup-step">
+      <div style="display:flex;align-items:center;margin-bottom:8px">
+        <span class="step-num">1</span>
+        <strong>Crie um projeto no Firebase</strong>
+      </div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:8px">Acesse <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a>, clique em <strong style="color:var(--text)">Adicionar projeto</strong> e siga o assistente (pode desativar o Google Analytics).</p>
+    </div>
+
+    <div class="setup-step">
+      <div style="display:flex;align-items:center;margin-bottom:8px">
+        <span class="step-num">2</span>
+        <strong>Ative o Firestore Database</strong>
+      </div>
+      <p style="font-size:13px;color:var(--muted)">No menu lateral: <strong style="color:var(--text)">Build → Firestore Database → Criar banco de dados</strong>. Escolha <em>Modo de teste</em> (válido por 30 dias — tempo suficiente para a Copa!).</p>
+    </div>
+
+    <div class="setup-step">
+      <div style="display:flex;align-items:center;margin-bottom:8px">
+        <span class="step-num">3</span>
+        <strong>Ative o Authentication (e-mail/senha)</strong>
+      </div>
+      <p style="font-size:13px;color:var(--muted)">No menu lateral: <strong style="color:var(--text)">Build → Authentication → Começar → E-mail/Senha → Ativar</strong>.</p>
+    </div>
+
+    <div class="setup-step">
+      <div style="display:flex;align-items:center;margin-bottom:8px">
+        <span class="step-num">4</span>
+        <strong>Copie a configuração do app</strong>
+      </div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:8px">Vá em <strong style="color:var(--text)">Configurações do projeto (⚙️) → Geral → Seus apps → Adicionar app → Web (&lt;/&gt;)</strong>. Copie o objeto <code>firebaseConfig</code>.</p>
+    </div>
+
+    <div class="setup-step">
+      <div style="display:flex;align-items:center;margin-bottom:8px">
+        <span class="step-num">5</span>
+        <strong>Cole no arquivo HTML</strong>
+      </div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:8px">Abra o arquivo <code>bolao-copa-2026-firebase.html</code> em um editor de texto e substitua o bloco abaixo:</p>
+      <div class="code-block">const FIREBASE_CONFIG = {
+  apiKey: "",          // ← Cole aqui
+  authDomain: "",      // ← Cole aqui
+  projectId: "",       // ← Cole aqui
+  storageBucket: "",   // ← Cole aqui
+  messagingSenderId: "",// ← Cole aqui
+  appId: ""            // ← Cole aqui
+};</div>
+    </div>
+
+    <div class="setup-step">
+      <div style="display:flex;align-items:center;margin-bottom:8px">
+        <span class="step-num">6</span>
+        <strong>Hospede no Netlify (grátis)</strong>
+      </div>
+      <p style="font-size:13px;color:var(--muted)">Acesse <a href="https://netlify.com" target="_blank">netlify.com</a>, crie uma conta e arraste o arquivo HTML para a área de deploy. Pronto — você terá uma URL pública para compartilhar!</p>
+    </div>
+
+    <div style="background:rgba(240,192,64,.08);border:1px solid rgba(240,192,64,.2);border-radius:10px;padding:14px 18px;margin-top:16px;font-size:13px;color:var(--gold)">
+      💡 <strong>Dica:</strong> Após configurar, o primeiro usuário que se registrar com o código <strong>copa2026admin</strong> vira administrador e pode inserir resultados.
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     AUTH SCREEN
+═══════════════════════════════════════ -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">🏆</div>
+    <div class="auth-title">Bolão Copa 2026</div>
+    <div class="auth-sub">EUA · Canadá · México</div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchAuthTab('login')">Entrar</button>
+      <button class="auth-tab" onclick="switchAuthTab('register')">Criar conta</button>
+    </div>
+    <div id="login-form" class="auth-form active">
+      <div class="field"><label>E-mail</label><input type="email" id="login-email" placeholder="seu@email.com" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <div class="field"><label>Senha</label><input type="password" id="login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <button class="btn btn-primary btn-block" onclick="doLogin()">Entrar →</button>
+    </div>
+    <div id="register-form" class="auth-form">
+      <div class="field"><label>Nome</label><input type="text" id="reg-name" placeholder="Seu nome"></div>
+      <div class="field"><label>E-mail</label><input type="email" id="reg-email" placeholder="seu@email.com"></div>
+      <div class="field"><label>Senha</label><input type="password" id="reg-pass" placeholder="Mínimo 6 caracteres"></div>
+      <div class="field"><label>Código Admin (opcional)</label><input type="password" id="reg-admin" placeholder="Deixe em branco se não for admin"></div>
+      <button class="btn btn-primary btn-block" onclick="doRegister()">Criar conta →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     APP
+═══════════════════════════════════════ -->
+<div id="app">
+  <header class="header">
+    <div class="header-brand">🏆 Bolão Copa 2026</div>
+    <div class="header-user">
+      <span>Olá, <strong id="header-name"></strong></span>
+      <button class="btn btn-ghost btn-sm" onclick="doLogout()">Sair</button>
+    </div>
+  </header>
+  <nav class="nav">
+    <button class="nav-btn active" onclick="showTab('r1')">⚽ Placares</button>
+    <button class="nav-btn" onclick="showTab('r2')">📊 Eventos</button>
+    <button class="nav-btn" onclick="showTab('placar')">🏅 Classificação</button>
+    <button class="nav-btn" id="nav-admin" style="display:none" onclick="showTab('admin')">⚙️ Admin</button>
+  </nav>
+  <div class="main">
+    <div class="container">
+
+      <section id="tab-r1" class="tab-section active">
+        <div class="page-title">⚽ Apostas de Placar</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px">
+          <div class="filter-bar" id="r1-filter-bar" style="margin-bottom:0"></div>
+          <button class="btn btn-ghost btn-sm" onclick="loadData().then(()=>renderR1())">🔄 Atualizar</button>
+        </div>
+        <div id="r1-games-list"></div>
+      </section>
+
+      <section id="tab-r2" class="tab-section">
+        <div class="page-title">📊 Apostas de Eventos</div>
+        <div class="round-tabs" id="r2-round-tabs"></div>
+        <div id="r2-content"></div>
+      </section>
+
+      <section id="tab-placar" class="tab-section">
+        <div class="page-title">🏅 Classificação Geral</div>
+        <div id="leaderboard-content"></div>
+      </section>
+
+      <section id="tab-admin" class="tab-section">
+        <div class="page-title">⚙️ Painel Admin</div>
+        <div id="admin-content"></div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<div id="modal-bg" class="modal-bg" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modal-box">
+    <div class="modal-title">
+      <span id="modal-title-text"></span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+<div id="toast-container"></div>
+
+<!-- ═══════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════ -->
+<script>
+'use strict';
+
+// ─────────────────────────────────────────
+// ★ CONFIGURAÇÃO DO FIREBASE
+// Cole aqui os dados do seu projeto Firebase
+// ─────────────────────────────────────────
+const FIREBASE_CONFIG = {
+  apiKey: "",
+  authDomain: "",
+  projectId: "",
+  storageBucket: "",
+  messagingSenderId: "",
+  appId: ""
+};
+
+// ─────────────────────────────────────────
+// CONSTANTES
+// ─────────────────────────────────────────
+const ADMIN_CODE = 'copa2026admin';
+
+const ROUNDS = [
+  {id:'R1',label:'Rodada 1 – Grupos'},
+  {id:'R2',label:'Rodada 2 – Grupos'},
+  {id:'R3',label:'Rodada 3 – Grupos'},
+  {id:'R16',label:'Oitavas de Final'},
+  {id:'QF',label:'Quartas de Final'},
+  {id:'SF',label:'Semifinais'},
+  {id:'FIN',label:'Final + 3º Lugar'},
+];
+
+const DEMO_GAMES = [
+  {id:'gA1',group:'A',round:'R1',date:'2026-06-11T18:00',teamA:'México',flagA:'🇲🇽',teamB:'Uruguai',flagB:'🇺🇾'},
+  {id:'gA2',group:'A',round:'R1',date:'2026-06-11T21:00',teamA:'EUA',flagA:'🇺🇸',teamB:'Panamá',flagB:'🇵🇦'},
+  {id:'gA3',group:'A',round:'R2',date:'2026-06-15T18:00',teamA:'México',flagA:'🇲🇽',teamB:'Panamá',flagB:'🇵🇦'},
+  {id:'gA4',group:'A',round:'R2',date:'2026-06-15T21:00',teamA:'EUA',flagA:'🇺🇸',teamB:'Uruguai',flagB:'🇺🇾'},
+  {id:'gA5',group:'A',round:'R3',date:'2026-06-19T21:00',teamA:'Uruguai',flagA:'🇺🇾',teamB:'Panamá',flagB:'🇵🇦'},
+  {id:'gA6',group:'A',round:'R3',date:'2026-06-19T21:00',teamA:'México',flagA:'🇲🇽',teamB:'EUA',flagB:'🇺🇸'},
+  {id:'gB1',group:'B',round:'R1',date:'2026-06-12T15:00',teamA:'Brasil',flagA:'🇧🇷',teamB:'Chile',flagB:'🇨🇱'},
+  {id:'gB2',group:'B',round:'R1',date:'2026-06-12T18:00',teamA:'Argentina',flagA:'🇦🇷',teamB:'Equador',flagB:'🇪🇨'},
+  {id:'gB3',group:'B',round:'R2',date:'2026-06-16T15:00',teamA:'Brasil',flagA:'🇧🇷',teamB:'Equador',flagB:'🇪🇨'},
+  {id:'gB4',group:'B',round:'R2',date:'2026-06-16T18:00',teamA:'Argentina',flagA:'🇦🇷',teamB:'Chile',flagB:'🇨🇱'},
+  {id:'gB5',group:'B',round:'R3',date:'2026-06-20T21:00',teamA:'Chile',flagA:'🇨🇱',teamB:'Equador',flagB:'🇪🇨'},
+  {id:'gB6',group:'B',round:'R3',date:'2026-06-20T21:00',teamA:'Brasil',flagA:'🇧🇷',teamB:'Argentina',flagB:'🇦🇷'},
+  {id:'gC1',group:'C',round:'R1',date:'2026-06-13T15:00',teamA:'França',flagA:'🇫🇷',teamB:'Bélgica',flagB:'🇧🇪'},
+  {id:'gC2',group:'C',round:'R1',date:'2026-06-13T18:00',teamA:'Espanha',flagA:'🇪🇸',teamB:'Marrocos',flagB:'🇲🇦'},
+  {id:'gC3',group:'C',round:'R2',date:'2026-06-17T15:00',teamA:'França',flagA:'🇫🇷',teamB:'Marrocos',flagB:'🇲🇦'},
+  {id:'gC4',group:'C',round:'R2',date:'2026-06-17T18:00',teamA:'Espanha',flagA:'🇪🇸',teamB:'Bélgica',flagB:'🇧🇪'},
+  {id:'gC5',group:'C',round:'R3',date:'2026-06-21T21:00',teamA:'Bélgica',flagA:'🇧🇪',teamB:'Marrocos',flagB:'🇲🇦'},
+  {id:'gC6',group:'C',round:'R3',date:'2026-06-21T21:00',teamA:'França',flagA:'🇫🇷',teamB:'Espanha',flagB:'🇪🇸'},
+  {id:'gD1',group:'D',round:'R1',date:'2026-06-14T15:00',teamA:'Alemanha',flagA:'🇩🇪',teamB:'Portugal',flagB:'🇵🇹'},
+  {id:'gD2',group:'D',round:'R1',date:'2026-06-14T18:00',teamA:'Inglaterra',flagA:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',teamB:'Países Baixos',flagB:'🇳🇱'},
+  {id:'gD3',group:'D',round:'R2',date:'2026-06-18T15:00',teamA:'Alemanha',flagA:'🇩🇪',teamB:'Países Baixos',flagB:'🇳🇱'},
+  {id:'gD4',group:'D',round:'R2',date:'2026-06-18T18:00',teamA:'Inglaterra',flagA:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',teamB:'Portugal',flagB:'🇵🇹'},
+  {id:'gD5',group:'D',round:'R3',date:'2026-06-22T21:00',teamA:'Portugal',flagA:'🇵🇹',teamB:'Países Baixos',flagB:'🇳🇱'},
+  {id:'gD6',group:'D',round:'R3',date:'2026-06-22T21:00',teamA:'Alemanha',flagA:'🇩🇪',teamB:'Inglaterra',flagB:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
+];
+
+// ─────────────────────────────────────────
+// FIREBASE INIT
+// ─────────────────────────────────────────
+const IS_CONFIGURED = !!(FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.apiKey.trim());
+let auth, db;
+
+if(IS_CONFIGURED){
+  firebase.initializeApp(FIREBASE_CONFIG);
+  auth = firebase.auth();
+  db   = firebase.firestore();
+}
+
+// ─────────────────────────────────────────
+// IN-MEMORY CACHE
+// ─────────────────────────────────────────
+const Cache = {
+  games: [],
+  scoreBets: [],
+  eventBets: [],
+  gameResults: {},  // {gid: {sa,sb}}
+  eventResults: {}, // {round: {amarelos,...}}
+  users: [],        // [{id, name, email, isAdmin}]
+};
+
+async function loadData(){
+  if(!IS_CONFIGURED) return;
+  showLoading(true);
+  try{
+    const [gSnap,sbSnap,ebSnap,grSnap,erSnap,uSnap] = await Promise.all([
+      db.collection('games').get(),
+      db.collection('scoreBets').get(),
+      db.collection('eventBets').get(),
+      db.collection('gameResults').get(),
+      db.collection('eventResults').get(),
+      db.collection('users').get(),
+    ]);
+    Cache.games = gSnap.empty ? [] : gSnap.docs.map(d=>({...d.data(),id:d.id}));
+    Cache.scoreBets = sbSnap.docs.map(d=>d.data());
+    Cache.eventBets = ebSnap.docs.map(d=>d.data());
+    Cache.gameResults = {};
+    grSnap.docs.forEach(d=>Cache.gameResults[d.id]=d.data());
+    Cache.eventResults = {};
+    erSnap.docs.forEach(d=>Cache.eventResults[d.id]=d.data());
+    Cache.users = uSnap.docs.map(d=>({id:d.id,...d.data()}));
+  }finally{
+    showLoading(false);
+  }
+}
+
+// ─────────────────────────────────────────
+// AUTH
+// ─────────────────────────────────────────
+let currentUser = null;
+
+async function doLogin(){
+  const email = document.getElementById('login-email').value.trim();
+  const pass  = document.getElementById('login-pass').value;
+  if(!email||!pass){ toast('Preencha e-mail e senha','err'); return; }
+  showLoading(true);
+  try{
+    await auth.signInWithEmailAndPassword(email, pass);
+    // onAuthStateChanged handles the rest
+  }catch(e){
+    showLoading(false);
+    toast(firebaseErrMsg(e),'err');
+  }
+}
+
+async function doRegister(){
+  const name      = document.getElementById('reg-name').value.trim();
+  const email     = document.getElementById('reg-email').value.trim();
+  const pass      = document.getElementById('reg-pass').value;
+  const adminCode = document.getElementById('reg-admin').value;
+  if(!name||!email||!pass){ toast('Preencha todos os campos','err'); return; }
+  if(pass.length<6){ toast('Senha com mínimo 6 caracteres','err'); return; }
+  showLoading(true);
+  try{
+    const cred = await auth.createUserWithEmailAndPassword(email, pass);
+    const uid  = cred.user.uid;
+    const isAdmin = adminCode === ADMIN_CODE;
+    await db.collection('users').doc(uid).set({name, email:email.toLowerCase(), isAdmin});
+    // onAuthStateChanged handles boot
+  }catch(e){
+    showLoading(false);
+    toast(firebaseErrMsg(e),'err');
+  }
+}
+
+function doLogout(){
+  auth.signOut();
+}
+
+function firebaseErrMsg(e){
+  const map = {
+    'auth/user-not-found':'E-mail não encontrado',
+    'auth/wrong-password':'Senha incorreta',
+    'auth/email-already-in-use':'E-mail já cadastrado',
+    'auth/invalid-email':'E-mail inválido',
+    'auth/too-many-requests':'Muitas tentativas. Tente em alguns minutos.',
+    'auth/weak-password':'Senha muito fraca',
+    'auth/invalid-credential':'E-mail ou senha incorretos',
+  };
+  return map[e.code] || e.message;
+}
+
+// ─────────────────────────────────────────
+// BOOT
+// ─────────────────────────────────────────
+let r1Filter = 'ALL';
+let r2Round  = 'R1';
+
+window.addEventListener('DOMContentLoaded', async ()=>{
+  if(!IS_CONFIGURED){
+    showLoading(false);
+    document.getElementById('setup-screen').classList.add('show');
+    return;
+  }
+
+  auth.onAuthStateChanged(async user => {
+    if(user){
+      showLoading(true);
+      await loadData();
+      // Get user profile
+      const uDoc = await db.collection('users').doc(user.uid).get();
+      if(!uDoc.exists){
+        // Edge case: Firebase auth exists but no Firestore doc
+        await db.collection('users').doc(user.uid).set({name:user.email,email:user.email,isAdmin:false});
+        await loadData();
+      }
+      currentUser = {id:user.uid, ...uDoc.data()};
+      showLoading(false);
+      showApp();
+    } else {
+      currentUser = null;
+      showLoading(false);
+      hideApp();
+    }
+  });
+});
+
+function showApp(){
+  document.getElementById('auth-screen').classList.remove('show');
+  document.getElementById('app').classList.add('show');
+  document.getElementById('header-name').textContent = currentUser.name;
+  if(currentUser.isAdmin) document.getElementById('nav-admin').style.display = 'inline-flex';
+  else document.getElementById('nav-admin').style.display = 'none';
+  showTab('r1');
+}
+
+function hideApp(){
+  document.getElementById('app').classList.remove('show');
+  document.getElementById('auth-screen').classList.add('show');
+  document.getElementById('login-email').value = '';
+  document.getElementById('login-pass').value  = '';
+}
+
+function switchAuthTab(tab){
+  document.querySelectorAll('.auth-tab').forEach((b,i)=>b.classList.toggle('active',(i===0&&tab==='login')||(i===1&&tab==='register')));
+  document.getElementById('login-form').classList.toggle('active',tab==='login');
+  document.getElementById('register-form').classList.toggle('active',tab==='register');
+}
+
+function showLoading(v){
+  document.getElementById('loading-overlay').classList.toggle('show',v);
+}
+
+// ─────────────────────────────────────────
+// NAVIGATION
+// ─────────────────────────────────────────
+function showTab(id){
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  const map={r1:0,r2:1,placar:2,admin:3};
+  document.querySelectorAll('.nav-btn')[map[id]]?.classList.add('active');
+  document.querySelectorAll('.tab-section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  if(id==='r1')    renderR1();
+  if(id==='r2')    renderR2();
+  if(id==='placar')renderLeaderboard();
+  if(id==='admin') renderAdmin();
+}
+
+// ─────────────────────────────────────────
+// SCORING
+// ─────────────────────────────────────────
+function scoreScoreBet(bet, result){
+  if(!result) return null;
+  const [ba,bb,ra,rb]=[+bet.sa,+bet.sb,+result.sa,+result.sb];
+  if(ba===ra&&bb===rb) return 5;
+  const bw=ba>bb?'A':ba<bb?'B':'D', rw=ra>rb?'A':ra<rb?'B':'D';
+  if(bw===rw) return 3;
+  if(ba===ra||bb===rb) return 1;
+  return 0;
+}
+
+function scoreEventBet(bet, result){
+  if(!result) return null;
+  const fields=['amarelos','expulsoes','escanteios','penaltis','artilheiro'];
+  let c=fields.filter(f=>{
+    const bv=String(bet[f]||'').toLowerCase().trim();
+    const rv=String(result[f]||'').toLowerCase().trim();
+    return bv&&rv&&bv===rv;
+  }).length;
+  if(c===5) return 5;
+  if(c>=2)  return 3;
+  if(c===1) return 1;
+  return 0;
+}
+
+function ptsClass(p){ return p===null?'pts-null':p>=5?'pts-5':p>=3?'pts-3':p>=1?'pts-1':'pts-0'; }
+function ptsLabel(p){ return p===null?'—':p; }
+
+function getLeaderboard(){
+  return Cache.users.map(u=>{
+    const r1=Cache.scoreBets.filter(b=>b.uid===u.id)
+      .reduce((s,b)=>s+(scoreScoreBet(b,Cache.gameResults[b.gid])||0),0);
+    const r2=Cache.eventBets.filter(b=>b.uid===u.id)
+      .reduce((s,b)=>s+(scoreEventBet(b,Cache.eventResults[b.round])||0),0);
+    return {id:u.id,name:u.name,email:u.email,r1,r2,total:r1+r2};
+  }).sort((a,b)=>b.total-a.total);
+}
+
+// ─────────────────────────────────────────
+// ROTINA 1 – PLACARES
+// ─────────────────────────────────────────
+function renderR1(){
+  const games   = Cache.games.length ? Cache.games : DEMO_GAMES;
+  const myBets  = Cache.scoreBets.filter(b=>b.uid===currentUser.id);
+
+  const groups  = ['ALL',...new Set(games.map(g=>g.group))];
+  document.getElementById('r1-filter-bar').innerHTML = groups.map(gr=>`
+    <button class="filter-chip${r1Filter===gr?' active':''}" onclick="r1Filter='${gr}';renderR1()">
+      ${gr==='ALL'?'Todos':'Grupo '+gr}
+    </button>`).join('');
+
+  const filtered = r1Filter==='ALL'?games:games.filter(g=>g.group===r1Filter);
+  const byRound  = {};
+  filtered.forEach(g=>{ (byRound[g.round]||(byRound[g.round]=[])).push(g); });
+
+  let html='';
+  ROUNDS.forEach(rd=>{
+    const gs=byRound[rd.id];
+    if(!gs?.length) return;
+    html+=`<div class="mb16"><div style="font-size:12px;color:var(--muted);font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">${rd.label}</div>`;
+    gs.forEach(g=>{
+      const res   = Cache.gameResults[g.id];
+      const myBet = myBets.find(b=>b.gid===g.id);
+      const pts   = myBet&&res ? scoreScoreBet(myBet,res) : null;
+      html+=`
+      <div class="game-card${myBet?' has-bet':''}" id="gc-${g.id}" onclick="toggleBetPanel('${g.id}')">
+        <div class="game-meta">
+          <span class="badge badge-group">Grupo ${g.group}</span>
+          <span class="badge badge-round">${rd.id}</span>
+          ${myBet?`<span class="badge badge-done">✓ Apostado</span>`:''}
+          ${res?`<span class="badge badge-done">Resultado oficial</span>`:''}
+          ${pts!==null?`<span class="pts ${ptsClass(pts)}" style="margin-left:4px">${ptsLabel(pts)}pts</span>`:''}
+          <span class="game-date">${formatDate(g.date)}</span>
+        </div>
+        <div class="teams-row">
+          <div class="team-block">
+            <div class="team-flag">${g.flagA}</div>
+            <div class="team-name">${g.teamA}</div>
+          </div>
+          <div class="vs-block">
+            ${myBet?`<div class="score-bet">${myBet.sa} × ${myBet.sb}</div>`:'<div class="vs">VS</div>'}
+            ${res?`<div style="font-size:11px;color:var(--green);margin-top:3px">Real: ${res.sa}×${res.sb}</div>`:''}
+          </div>
+          <div class="team-block">
+            <div class="team-flag">${g.flagB}</div>
+            <div class="team-name">${g.teamB}</div>
+          </div>
+        </div>
+        <div class="bet-panel" id="bp-${g.id}" style="display:none" onclick="event.stopPropagation()">
+          <div class="bet-panel-title">🎯 Sua aposta – ${g.teamA} vs ${g.teamB}</div>
+          <div class="score-inputs">
+            <div class="score-input-wrap">
+              <label>${g.teamA}</label>
+              <input type="number" min="0" max="99" id="sc-${g.id}-a" value="${myBet?myBet.sa:''}" placeholder="0">
+            </div>
+            <div class="score-dash">×</div>
+            <div class="score-input-wrap">
+              <label>${g.teamB}</label>
+              <input type="number" min="0" max="99" id="sc-${g.id}-b" value="${myBet?myBet.sb:''}" placeholder="0">
+            </div>
+          </div>
+          <button class="btn btn-green btn-block" onclick="saveScoreBet('${g.id}')">
+            💾 ${myBet?'Atualizar aposta':'Salvar aposta'}
+          </button>
+          ${renderBetsTable(g.id)}
+        </div>
+      </div>`;
+    });
+    html+='</div>';
+  });
+
+  if(!html) html='<div class="card"><div class="empty">Nenhum jogo cadastrado.<br><br>O admin precisa inicializar os jogos no Painel Admin.</div></div>';
+  document.getElementById('r1-games-list').innerHTML=html;
+}
+
+function renderBetsTable(gid){
+  const bets = Cache.scoreBets.filter(b=>b.gid===gid);
+  const res  = Cache.gameResults[gid];
+  if(!bets.length) return '<div class="divider"></div><div class="text-muted fs12" style="text-align:center;padding:10px">Sem apostas ainda</div>';
+  let rows='';
+  bets.forEach(b=>{
+    const u   = Cache.users.find(x=>x.id===b.uid)||{name:'?'};
+    const pts = scoreScoreBet(b,res);
+    rows+=`<tr${b.uid===currentUser.id?' style="font-weight:700"':''}>
+      <td>${b.uid===currentUser.id?'⭐ ':''} ${u.name}</td>
+      <td style="text-align:center;font-weight:700;font-size:15px">${b.sa} × ${b.sb}</td>
+      <td style="text-align:center">${res?`<span class="pts ${ptsClass(pts)}">${ptsLabel(pts)}</span>`:'<span class="text-muted fs12">—</span>'}</td>
+    </tr>`;
+  });
+  return `<div class="divider"></div>
+  <div class="card-title" style="font-size:12px;margin-bottom:8px">Apostas de todos</div>
+  <div class="bets-table-wrap"><table class="bets-table">
+    <thead><tr><th>Jogador</th><th style="text-align:center">Aposta</th><th style="text-align:center">Pts</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table></div>`;
+}
+
+function toggleBetPanel(gid){
+  const panel  = document.getElementById('bp-'+gid);
+  const isOpen = panel.style.display==='block';
+  document.querySelectorAll('.bet-panel').forEach(p=>p.style.display='none');
+  document.querySelectorAll('.game-card').forEach(c=>c.classList.remove('selected'));
+  if(!isOpen){ panel.style.display='block'; document.getElementById('gc-'+gid).classList.add('selected'); }
+}
+
+async function saveScoreBet(gid){
+  const a = document.getElementById('sc-'+gid+'-a').value;
+  const b = document.getElementById('sc-'+gid+'-b').value;
+  if(a===''||b===''){ toast('Informe o placar dos dois times','err'); return; }
+  const bet = {uid:currentUser.id, gid, sa:+a, sb:+b, ts:Date.now()};
+  await db.collection('scoreBets').doc(`${currentUser.id}_${gid}`).set(bet);
+  // Update cache
+  Cache.scoreBets = Cache.scoreBets.filter(x=>!(x.uid===bet.uid&&x.gid===bet.gid));
+  Cache.scoreBets.push(bet);
+  toast('Aposta salva!','ok');
+  renderR1();
+  setTimeout(()=>{
+    const p=document.getElementById('bp-'+gid);
+    if(p){ p.style.display='block'; document.getElementById('gc-'+gid).classList.add('selected'); }
+  },50);
+}
+
+// ─────────────────────────────────────────
+// ROTINA 2 – EVENTOS
+// ─────────────────────────────────────────
+function renderR2(){
+  document.getElementById('r2-round-tabs').innerHTML = ROUNDS.map(r=>`
+    <button class="round-tab${r2Round===r.id?' active':''}" onclick="r2Round='${r.id}';renderR2Content()">
+      ${r.label}
+    </button>`).join('');
+  renderR2Content();
+}
+
+function renderR2Content(){
+  // Update active tab styling
+  document.querySelectorAll('.round-tab').forEach(t=>{
+    t.classList.toggle('active', t.textContent.trim().startsWith(ROUNDS.find(r=>r.id===r2Round)?.label.substring(0,5)||'_'));
+  });
+
+  const myBet = Cache.eventBets.find(b=>b.uid===currentUser.id&&b.round===r2Round);
+  const res   = Cache.eventResults[r2Round];
+  const pts   = myBet&&res ? scoreEventBet(myBet,res) : null;
+  const rdLbl = ROUNDS.find(r=>r.id===r2Round)?.label||r2Round;
+
+  const FIELDS=[
+    {id:'amarelos',label:'🟨 Cartões Amarelos',placeholder:'ex: 8',type:'number'},
+    {id:'expulsoes',label:'🟥 Expulsões',placeholder:'ex: 2',type:'number'},
+    {id:'escanteios',label:'🚩 Escanteios',placeholder:'ex: 24',type:'number'},
+    {id:'penaltis',label:'⚡ Gols de Pênalti',placeholder:'ex: 3',type:'number'},
+    {id:'artilheiro',label:'👟 Artilheiro da Rodada',placeholder:'ex: Vinicius Jr (Brasil)',type:'text',full:true},
+  ];
+
+  let html=`<div class="card mb16">
+    <div class="card-title">🎯 Sua Aposta – ${rdLbl}
+      ${pts!==null?`<span class="pts ${ptsClass(pts)}" style="margin-left:auto">${ptsLabel(pts)}pts</span>`:''}
+    </div>
+    <div class="events-grid">`;
+  FIELDS.forEach(f=>{
+    html+=`<div class="field${f.full?' event-full':''}">
+      <label>${f.label}</label>
+      <input type="${f.type}" id="ev-${f.id}" placeholder="${f.placeholder}" value="${myBet?myBet[f.id]||'':''}">
+    </div>`;
+  });
+  html+=`</div><div class="mt16">
+    <button class="btn btn-green" onclick="saveEventBet()">💾 ${myBet?'Atualizar aposta':'Salvar aposta'}</button>
+  </div></div>`;
+
+  if(res){
+    html+=`<div class="card mb16"><div class="card-title">✅ Resultado Oficial</div>
+    <div class="bets-table-wrap"><table class="bets-table">
+      <thead><tr><th>Evento</th><th>Sua Aposta</th><th>Resultado Real</th><th>Acerto</th></tr></thead><tbody>`;
+    FIELDS.forEach(f=>{
+      const bv = myBet?String(myBet[f.id]||''):'—';
+      const rv = String(res[f.id]||'');
+      const ok = myBet&&bv.toLowerCase().trim()===rv.toLowerCase().trim();
+      html+=`<tr>
+        <td>${f.label}</td>
+        <td>${bv||'—'}</td>
+        <td class="text-green fw700">${rv||'—'}</td>
+        <td>${myBet?(ok?'<span class="text-green">✓</span>':'<span class="text-red">✗</span>'):'—'}</td>
+      </tr>`;
+    });
+    html+=`</tbody></table></div></div>`;
+  }
+
+  const allBets = Cache.eventBets.filter(b=>b.round===r2Round);
+  if(allBets.length){
+    html+=`<div class="card"><div class="card-title">📋 Apostas de Todos</div>
+    <div class="bets-table-wrap"><table class="bets-table">
+      <thead><tr><th>Jogador</th><th>Amarelos</th><th>Expulsões</th><th>Escanteios</th><th>Pênaltis</th><th>Artilheiro</th><th>Pts</th></tr></thead><tbody>`;
+    allBets.forEach(b=>{
+      const u=Cache.users.find(x=>x.id===b.uid)||{name:'?'};
+      const p=scoreEventBet(b,res);
+      html+=`<tr${b.uid===currentUser.id?' style="font-weight:700"':''}>
+        <td>${b.uid===currentUser.id?'⭐ ':''} ${u.name}</td>
+        <td style="text-align:center">${b.amarelos||'—'}</td>
+        <td style="text-align:center">${b.expulsoes||'—'}</td>
+        <td style="text-align:center">${b.escanteios||'—'}</td>
+        <td style="text-align:center">${b.penaltis||'—'}</td>
+        <td>${b.artilheiro||'—'}</td>
+        <td>${res?`<span class="pts ${ptsClass(p)}">${ptsLabel(p)}</span>`:'<span class="text-muted fs12">—</span>'}</td>
+      </tr>`;
+    });
+    html+=`</tbody></table></div></div>`;
+  }
+
+  document.getElementById('r2-content').innerHTML=html;
+}
+
+async function saveEventBet(){
+  const data={
+    uid:currentUser.id, round:r2Round, ts:Date.now(),
+    amarelos:  document.getElementById('ev-amarelos').value,
+    expulsoes: document.getElementById('ev-expulsoes').value,
+    escanteios:document.getElementById('ev-escanteios').value,
+    penaltis:  document.getElementById('ev-penaltis').value,
+    artilheiro:document.getElementById('ev-artilheiro').value,
+  };
+  const hasAny=Object.entries(data).filter(([k])=>!['uid','round','ts'].includes(k)).some(([,v])=>v!=='');
+  if(!hasAny){ toast('Preencha pelo menos um campo','err'); return; }
+  await db.collection('eventBets').doc(`${currentUser.id}_${r2Round}`).set(data);
+  Cache.eventBets = Cache.eventBets.filter(b=>!(b.uid===data.uid&&b.round===data.round));
+  Cache.eventBets.push(data);
+  toast('Aposta de eventos salva!','ok');
+  renderR2Content();
+}
+
+// ─────────────────────────────────────────
+// LEADERBOARD
+// ─────────────────────────────────────────
+function renderLeaderboard(){
+  const lb=getLeaderboard();
+  if(!lb.length){ document.getElementById('leaderboard-content').innerHTML='<div class="empty">Nenhum jogador cadastrado ainda.</div>'; return; }
+  let html=`<div class="card"><table class="lb-table">
+    <thead><tr><th>#</th><th>Jogador</th><th style="text-align:center">⚽ Placares</th><th style="text-align:center">📊 Eventos</th><th style="text-align:center">🏆 Total</th></tr></thead><tbody>`;
+  lb.forEach((p,i)=>{
+    const rc=i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'rank-n';
+    html+=`<tr${p.id===currentUser.id?' style="background:rgba(240,192,64,.06)"':''}>
+      <td><span class="rank-badge ${rc}">${i+1}</span></td>
+      <td><strong>${p.name}</strong>${p.id===currentUser.id?' <span class="fs12 text-muted">(você)</span>':''}</td>
+      <td style="text-align:center">${p.r1}</td>
+      <td style="text-align:center">${p.r2}</td>
+      <td style="text-align:center"><span class="total-pts">${p.total}</span></td>
+    </tr>`;
+  });
+  html+=`</tbody></table></div>
+  <div class="card card-sm mt16">
+    <div style="display:flex;gap:24px;flex-wrap:wrap;font-size:12px;color:var(--muted)">
+      <div><strong style="color:var(--text)">Placar:</strong>
+        <span class="pts pts-5">5</span> Exato &nbsp;
+        <span class="pts pts-3">3</span> Resultado certo &nbsp;
+        <span class="pts pts-1">1</span> Gols de 1 time
+      </div>
+      <div><strong style="color:var(--text)">Eventos:</strong>
+        <span class="pts pts-5">5</span> Tudo certo &nbsp;
+        <span class="pts pts-3">3</span> 2+ acertos &nbsp;
+        <span class="pts pts-1">1</span> 1 acerto
+      </div>
+    </div>
+  </div>`;
+  document.getElementById('leaderboard-content').innerHTML=html;
+}
+
+// ─────────────────────────────────────────
+// ADMIN
+// ─────────────────────────────────────────
+function renderAdmin(){
+  if(!currentUser.isAdmin){ document.getElementById('admin-content').innerHTML='<div class="empty">Acesso restrito a administradores.</div>'; return; }
+  const games  = Cache.games.length ? Cache.games : DEMO_GAMES;
+  const gres   = Cache.gameResults;
+  const eres   = Cache.eventResults;
+
+  let html='';
+
+  // Init games button
+  if(!Cache.games.length){
+    html+=`<div class="card mb16" style="border-color:var(--orange)">
+      <div class="card-title" style="color:var(--orange)">⚠️ Banco de dados vazio</div>
+      <p class="fs13 text-muted mb16">Nenhum jogo foi encontrado no Firestore. Clique abaixo para inicializar com os jogos demo.</p>
+      <button class="btn btn-orange" onclick="initGames()">🚀 Inicializar Jogos Demo</button>
+    </div>`;
+  }
+
+  // Resultados de placares
+  html+=`<div class="admin-section">
+    <div class="admin-section-title">⚽ Resultados de Placares</div>
+    <div style="overflow-x:auto"><table class="bets-table">
+      <thead><tr><th>Jogo</th><th>Rodada</th><th>Resultado</th><th>Ação</th></tr></thead><tbody>`;
+  games.forEach(g=>{
+    const res=gres[g.id];
+    html+=`<tr>
+      <td>${g.flagA} ${g.teamA} × ${g.teamB} ${g.flagB}</td>
+      <td><span class="badge badge-round">${g.round}</span></td>
+      <td>${res?`<strong class="text-green">${res.sa}×${res.sb}</strong>`:'<span class="text-muted fs12">—</span>'}</td>
+      <td><button class="btn btn-sm btn-blue" onclick="openResultModal('${g.id}')">${res?'✏️ Editar':'📝 Inserir'}</button></td>
+    </tr>`;
+  });
+  html+=`</tbody></table></div></div>`;
+
+  // Resultados de eventos
+  html+=`<div class="admin-section"><div class="admin-section-title">📊 Resultados de Eventos</div>`;
+  ROUNDS.forEach(r=>{
+    const res=eres[r.id];
+    html+=`<div class="flex-between card card-sm mb8">
+      <span>${r.label}</span>
+      <div class="flex">
+        ${res?`<span class="text-green fs12">✓ Registrado</span>`:'<span class="text-muted fs12">Pendente</span>'}
+        <button class="btn btn-sm btn-blue" onclick="openEventResultModal('${r.id}','${r.label}')">${res?'✏️ Editar':'📝 Inserir'}</button>
+      </div>
+    </div>`;
+  });
+  html+='</div>';
+
+  // Gerenciar jogos
+  html+=`<div class="admin-section"><div class="admin-section-title">🗓️ Gerenciar Jogos</div>
+    <div class="flex mb16" style="flex-wrap:wrap;gap:8px">
+      <button class="btn btn-green btn-sm" onclick="openAddGameModal()">➕ Adicionar Jogo</button>
+      <button class="btn btn-orange btn-sm" onclick="initGames(true)">🔄 Recarregar Jogos Demo</button>
+    </div>
+    <div style="overflow-x:auto"><table class="bets-table">
+      <thead><tr><th>#</th><th>Grp</th><th>Rod.</th><th>Data</th><th>Jogo</th><th></th></tr></thead><tbody>`;
+  games.forEach((g,i)=>{
+    html+=`<tr>
+      <td class="text-muted fs12">${i+1}</td>
+      <td><span class="badge badge-group">${g.group}</span></td>
+      <td><span class="badge badge-round">${g.round}</span></td>
+      <td class="fs12 text-muted">${formatDate(g.date)}</td>
+      <td>${g.flagA} ${g.teamA} × ${g.teamB} ${g.flagB}</td>
+      <td><button class="btn btn-sm btn-danger" onclick="deleteGame('${g.id}')">🗑️</button></td>
+    </tr>`;
+  });
+  html+=`</tbody></table></div></div>`;
+
+  // Usuários
+  html+=`<div class="admin-section"><div class="admin-section-title">👥 Jogadores Cadastrados</div>
+    <div style="overflow-x:auto"><table class="bets-table">
+      <thead><tr><th>Nome</th><th>E-mail</th><th>Admin</th></tr></thead><tbody>`;
+  Cache.users.forEach(u=>{
+    html+=`<tr>
+      <td>${u.name}${u.id===currentUser.id?' <span class="fs12 text-muted">(você)</span>':''}</td>
+      <td class="text-muted fs12">${u.email}</td>
+      <td>${u.isAdmin?'<span class="text-gold">✓ Admin</span>':'—'}</td>
+    </tr>`;
+  });
+  html+=`</tbody></table></div></div>`;
+
+  document.getElementById('admin-content').innerHTML=html;
+}
+
+async function initGames(force=false){
+  if(!force && Cache.games.length) return;
+  if(force && !confirm('Isso irá sobrescrever os jogos atuais. Continuar?')) return;
+  showLoading(true);
+  try{
+    const batch=db.batch();
+    DEMO_GAMES.forEach(g=>{
+      batch.set(db.collection('games').doc(g.id),g);
+    });
+    await batch.commit();
+    await loadData();
+    toast('Jogos inicializados!','ok');
+    renderAdmin();
+  }catch(e){ toast(e.message,'err'); }
+  finally{ showLoading(false); }
+}
+
+function openResultModal(gid){
+  const g   = (Cache.games.length?Cache.games:DEMO_GAMES).find(x=>x.id===gid);
+  const res = Cache.gameResults[gid];
+  openModal(`⚽ Resultado: ${g.teamA} × ${g.teamB}`,`
+    <p class="fs13 text-muted mb16">${g.flagA} <strong>${g.teamA}</strong> vs <strong>${g.teamB}</strong> ${g.flagB}</p>
+    <div class="score-inputs" style="justify-content:flex-start;gap:12px">
+      <div class="score-input-wrap"><label>${g.teamA}</label>
+        <input type="number" id="res-sa" min="0" max="99" value="${res?res.sa:''}" placeholder="0">
+      </div>
+      <div class="score-dash" style="margin-top:24px">×</div>
+      <div class="score-input-wrap"><label>${g.teamB}</label>
+        <input type="number" id="res-sb" min="0" max="99" value="${res?res.sb:''}" placeholder="0">
+      </div>
+    </div>
+    <div class="mt16">
+      <button class="btn btn-green btn-block" onclick="saveGameResult('${gid}')">✅ Confirmar Resultado</button>
+    </div>`);
+}
+
+async function saveGameResult(gid){
+  const sa=document.getElementById('res-sa').value;
+  const sb=document.getElementById('res-sb').value;
+  if(sa===''||sb===''){ toast('Informe os dois placares','err'); return; }
+  await db.collection('gameResults').doc(gid).set({sa:+sa,sb:+sb});
+  Cache.gameResults[gid]={sa:+sa,sb:+sb};
+  toast('Resultado salvo!','ok');
+  closeModal(); renderAdmin();
+}
+
+function openEventResultModal(roundId, roundLabel){
+  const res=Cache.eventResults[roundId]||{};
+  openModal(`📊 Eventos – ${roundLabel}`,`
+    <div class="events-grid">
+      <div class="field"><label>🟨 Cartões Amarelos</label><input type="number" id="er-amarelos" value="${res.amarelos||''}" placeholder="ex: 8"></div>
+      <div class="field"><label>🟥 Expulsões</label><input type="number" id="er-expulsoes" value="${res.expulsoes||''}" placeholder="ex: 2"></div>
+      <div class="field"><label>🚩 Escanteios</label><input type="number" id="er-escanteios" value="${res.escanteios||''}" placeholder="ex: 24"></div>
+      <div class="field"><label>⚡ Gols de Pênalti</label><input type="number" id="er-penaltis" value="${res.penaltis||''}" placeholder="ex: 3"></div>
+      <div class="field event-full"><label>👟 Artilheiro da Rodada</label><input type="text" id="er-artilheiro" value="${res.artilheiro||''}" placeholder="ex: Vinicius Jr (Brasil)"></div>
+    </div>
+    <div class="mt16"><button class="btn btn-green btn-block" onclick="saveEventResult('${roundId}')">✅ Salvar Resultados</button></div>`);
+}
+
+async function saveEventResult(roundId){
+  const data={
+    amarelos:  document.getElementById('er-amarelos').value,
+    expulsoes: document.getElementById('er-expulsoes').value,
+    escanteios:document.getElementById('er-escanteios').value,
+    penaltis:  document.getElementById('er-penaltis').value,
+    artilheiro:document.getElementById('er-artilheiro').value,
+  };
+  await db.collection('eventResults').doc(roundId).set(data);
+  Cache.eventResults[roundId]=data;
+  toast('Resultado de eventos salvo!','ok');
+  closeModal(); renderAdmin();
+}
+
+function openAddGameModal(){
+  openModal('➕ Adicionar Jogo',`
+    <div class="field-row">
+      <div class="field"><label>Grupo</label>
+        <select id="ng-group">${'ABCDEFGHIJKLMNOP'.split('').map(c=>`<option>${c}</option>`).join('')}</select>
+      </div>
+      <div class="field"><label>Rodada</label>
+        <select id="ng-round">${ROUNDS.map(r=>`<option value="${r.id}">${r.label}</option>`).join('')}</select>
+      </div>
+    </div>
+    <div class="field"><label>Data e Hora</label><input type="datetime-local" id="ng-date" value="${new Date().toISOString().slice(0,16)}"></div>
+    <div class="field-row">
+      <div class="field"><label>Emoji Time A</label><input type="text" id="ng-flagA" placeholder="🇧🇷" maxlength="4"></div>
+      <div class="field"><label>Time A</label><input type="text" id="ng-teamA" placeholder="Brasil"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Emoji Time B</label><input type="text" id="ng-flagB" placeholder="🇦🇷" maxlength="4"></div>
+      <div class="field"><label>Time B</label><input type="text" id="ng-teamB" placeholder="Argentina"></div>
+    </div>
+    <div class="mt16"><button class="btn btn-green btn-block" onclick="addGame()">➕ Adicionar</button></div>`);
+}
+
+async function addGame(){
+  const g={
+    id:'g'+Date.now(),
+    group:document.getElementById('ng-group').value,
+    round:document.getElementById('ng-round').value,
+    date:document.getElementById('ng-date').value,
+    flagA:document.getElementById('ng-flagA').value||'🏳️',
+    teamA:document.getElementById('ng-teamA').value.trim(),
+    flagB:document.getElementById('ng-flagB').value||'🏳️',
+    teamB:document.getElementById('ng-teamB').value.trim(),
+  };
+  if(!g.teamA||!g.teamB){ toast('Informe os dois times','err'); return; }
+  await db.collection('games').doc(g.id).set(g);
+  Cache.games.push(g);
+  toast('Jogo adicionado!','ok');
+  closeModal(); renderAdmin();
+}
+
+async function deleteGame(gid){
+  if(!confirm('Remover este jogo?')) return;
+  await db.collection('games').doc(gid).delete();
+  Cache.games = Cache.games.filter(g=>g.id!==gid);
+  toast('Jogo removido','ok');
+  renderAdmin();
+}
+
+// ─────────────────────────────────────────
+// MODAL / TOAST / UTILS
+// ─────────────────────────────────────────
+function openModal(title,body){
+  document.getElementById('modal-title-text').textContent=title;
+  document.getElementById('modal-body').innerHTML=body;
+  document.getElementById('modal-bg').classList.add('show');
+}
+function closeModal(){ document.getElementById('modal-bg').classList.remove('show'); }
+
+function toast(msg,type='ok'){
+  const t=document.createElement('div');
+  t.className=`toast toast-${type==='ok'?'ok':type==='info'?'info':'err'}`;
+  t.textContent=msg;
+  document.getElementById('toast-container').appendChild(t);
+  setTimeout(()=>t.remove(),3200);
+}
+
+function formatDate(dt){
+  if(!dt) return '';
+  try{ return new Date(dt).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}); }
+  catch{ return dt; }
+}
+</script>
+</body>
+</html>
